@@ -1,8 +1,10 @@
 package context;
 
+import annotations.Autowired;
 import annotations.Component;
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,8 +23,8 @@ public class AppContext {
             // Bean 인스턴스 생성 및 등록
             instantiateBeans(componentClasses);
 
-            // TODO: @Autowired 의존성 주입 (구현 예정)
-
+            // @Autowired 의존성 주입
+            injectDependencies();
         } catch (Exception e) {
             throw new RuntimeException("AppContext 초기화 실패", e);
         }
@@ -89,6 +91,30 @@ public class AppContext {
                 beans.put(clazz, instance);
             } catch (Exception e) {
                 throw new RuntimeException(clazz.getName() + " Bean 생성 실패", e);
+            }
+        }
+    }
+
+    private void injectDependencies() {
+        for (Object beanInstance : beans.values()) {
+            Class<?> clazz = beanInstance.getClass();
+
+            for (Field field : clazz.getDeclaredFields()) {
+                if (field.isAnnotationPresent(Autowired.class)) {
+                    Class<?> fieldType = field.getType();
+                    Object dependencyInstance = beans.get(fieldType);
+
+                    if (dependencyInstance == null) {
+                        throw new RuntimeException(fieldType.getName() + " 타입의 Bean을 찾을 수 없습니다.");
+                    }
+
+                    try {
+                        field.setAccessible(true);
+                        field.set(beanInstance, dependencyInstance);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(clazz.getName() + " Bean 의존성 주입 실패", e);
+                    }
+                }
             }
         }
     }
