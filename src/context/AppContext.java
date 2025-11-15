@@ -2,6 +2,7 @@ package context;
 
 import annotations.Component;
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,9 +18,11 @@ public class AppContext {
             // @Component 스캔
             Set<Class<?>> componentClasses = findComponentClasses(basePackage);
 
-            // TODO: Bean 인스턴스 생성 및 등록 (구현 예정)
+            // Bean 인스턴스 생성 및 등록
+            instantiateBeans(componentClasses);
 
             // TODO: @Autowired 의존성 주입 (구현 예정)
+
         } catch (Exception e) {
             throw new RuntimeException("AppContext 초기화 실패", e);
         }
@@ -73,6 +76,19 @@ public class AppContext {
                 if (clazz.isAnnotationPresent(Component.class)) {
                     componentClasses.add(clazz);
                 }
+            }
+        }
+    }
+
+    private void instantiateBeans(Set<Class<?>> componentClasses) {
+        for (Class<?> clazz : componentClasses) {
+            try {
+                Constructor<?> constructor = clazz.getDeclaredConstructor();
+                constructor.setAccessible(true);
+                Object instance = constructor.newInstance();
+                beans.put(clazz, instance);
+            } catch (Exception e) {
+                throw new RuntimeException(clazz.getName() + " Bean 생성 실패", e);
             }
         }
     }
