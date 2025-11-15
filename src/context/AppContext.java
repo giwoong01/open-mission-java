@@ -1,15 +1,21 @@
 package context;
 
+import annotations.Component;
+import java.io.File;
+import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class AppContext {
 
     private final Map<Class<?>, Object> beans = new HashMap<>();
 
-    public AppContext() {
+    public AppContext(String basePackage) {
         try {
-            // TODO: @Component 스캔 (구현 예정)
+            // @Component 스캔
+            Set<Class<?>> componentClasses = findComponentClasses(basePackage);
 
             // TODO: Bean 인스턴스 생성 및 등록 (구현 예정)
 
@@ -28,6 +34,47 @@ public class AppContext {
         }
 
         return (T) instance;
+    }
+
+    private Set<Class<?>> findComponentClasses(String basePackage) throws Exception {
+        Set<Class<?>> componentClasses = new HashSet<>();
+
+        String path = basePackage.replace('.', '/');
+
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        URL resourceUrl = contextClassLoader.getResource(path);
+
+        if (resourceUrl == null) {
+            throw new RuntimeException("패키지가 존재하지 않습니다. -" + basePackage);
+        }
+
+        File baseDir = new File((resourceUrl.toURI()));
+
+        scanClasses(baseDir, basePackage, componentClasses);
+
+        return componentClasses;
+    }
+
+    private void scanClasses(File directory, String packageName, Set<Class<?>> componentClasses) throws ClassNotFoundException {
+        File[] files = directory.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                scanClasses(file, packageName + "." + file.getName(), componentClasses);
+            } else if (file.getName().endsWith(".class")) {
+                String className = file.getName().substring(0, file.getName().length() - 6);
+                String fullClassName = packageName + "." + className;
+
+                Class<?> clazz = Class.forName(fullClassName);
+
+                if (clazz.isAnnotationPresent(Component.class)) {
+                    componentClasses.add(clazz);
+                }
+            }
+        }
     }
 
 }
