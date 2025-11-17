@@ -2,7 +2,6 @@ package racingcar.domain;
 
 public class Car {
 
-    private static final int INITIAL_POSITION = 0;
     private static final int MOVE_THRESHOLD = 4;
     private static final String NAME_POSITION_SEPARATOR = " : ";
     private static final String POSITION_MARK = "-";

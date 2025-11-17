@@ -1,16 +1,18 @@
 package racingcar;
 
-import camp.nextstep.edu.missionutils.Console;
+import context.AppContext;
 import racingcar.controller.RacingcarController;
-import racingcar.domain.power.RandomPowerGenerator;
+import racingcar.util.Console;
 
 public class Application {
 
     public static void main(String[] args) {
         try {
-            RacingcarController racingcarController = new RacingcarController(
-                    new RandomPowerGenerator()
-            );
+            String basePackage = "racingcar";
+
+            AppContext appContext = new AppContext(basePackage);
+
+            RacingcarController racingcarController = appContext.getBean(RacingcarController.class);
             racingcarController.run();
         } finally {
             Console.close();

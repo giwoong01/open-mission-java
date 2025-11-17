@@ -1,17 +1,26 @@
 package racingcar.controller;
 
+import annotations.Autowired;
+import annotations.Component;
 import racingcar.domain.Cars;
 import racingcar.domain.TryCount;
 import racingcar.domain.power.PowerGenerator;
 import racingcar.view.InputView;
 import racingcar.view.OutputView;
 
+@Component
 public class RacingcarController {
 
-    private final PowerGenerator powerGenerator;
+    @Autowired
+    private PowerGenerator powerGenerator;
 
-    public RacingcarController(PowerGenerator powerGenerator) {
-        this.powerGenerator = powerGenerator;
+    @Autowired
+    private InputView inputView;
+
+    @Autowired
+    private OutputView outputView;
+
+    public RacingcarController() {
     }
 
     public void run() {
@@ -23,26 +32,26 @@ public class RacingcarController {
     }
 
     private Cars getCars() {
-        String carNames = InputView.inputCarNames();
+        String carNames = inputView.inputCarNames();
         return new Cars(carNames);
     }
 
     private TryCount getTryCount() {
-        String tryCount = InputView.inputTryCount();
+        String tryCount = inputView.inputTryCount();
         return new TryCount(tryCount);
     }
 
     private void runRace(Cars cars, TryCount tryCount) {
-        OutputView.printRaceStartMessage();
+        outputView.printRaceStartMessage();
 
         for (int i = 0; i < tryCount.getCount(); i++) {
             cars.moveAll(powerGenerator);
-            OutputView.printRoundStatus(cars.toString());
+            outputView.printRoundStatus(cars.toString());
         }
     }
 
     private void displayWinners(Cars cars) {
-        OutputView.printWinnerNames(cars.winnerNames());
+        outputView.printWinnerNames(cars.winnerNames());
     }
 
 }

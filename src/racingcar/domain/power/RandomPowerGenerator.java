@@ -1,7 +1,9 @@
 package racingcar.domain.power;
 
-import camp.nextstep.edu.missionutils.Randoms;
+import annotations.Component;
+import racingcar.util.Randoms;
 
+@Component
 public class RandomPowerGenerator implements PowerGenerator {
 
     private static final int RANDOM_RANGE_START_INCLUSIVE = 0;
