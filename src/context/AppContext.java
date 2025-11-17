@@ -32,7 +32,11 @@ public class AppContext {
 
     @SuppressWarnings("unchecked")
     public <T> T getBean(Class<T> clazz) {
-        Object instance = beans.get(clazz);
+        Object instance = findBean(clazz);
+
+        if (instance == null) {
+            instance = beans.get(clazz);
+        }
 
         if (instance == null) {
             throw new RuntimeException(clazz.getName() + " 타입의 Bean을 찾을 수 없습니다.");
@@ -84,11 +88,17 @@ public class AppContext {
 
     private void instantiateBeans(Set<Class<?>> componentClasses) {
         for (Class<?> clazz : componentClasses) {
+            if (clazz.isInterface()) {
+                continue;
+            }
+
             try {
                 Constructor<?> constructor = clazz.getDeclaredConstructor();
                 constructor.setAccessible(true);
                 Object instance = constructor.newInstance();
+
                 beans.put(clazz, instance);
+                registerInterfaces(clazz, instance);
             } catch (Exception e) {
                 throw new RuntimeException(clazz.getName() + " Bean 생성 실패", e);
             }
@@ -96,13 +106,15 @@ public class AppContext {
     }
 
     private void injectDependencies() {
-        for (Object beanInstance : beans.values()) {
+        for (Class<?> clazzKey : beans.keySet()) {
+            Object beanInstance = beans.get(clazzKey);
             Class<?> clazz = beanInstance.getClass();
 
             for (Field field : clazz.getDeclaredFields()) {
                 if (field.isAnnotationPresent(Autowired.class)) {
                     Class<?> fieldType = field.getType();
-                    Object dependencyInstance = beans.get(fieldType);
+
+                    Object dependencyInstance = findBean(fieldType);
 
                     if (dependencyInstance == null) {
                         throw new RuntimeException(fieldType.getName() + " 타입의 Bean을 찾을 수 없습니다.");
@@ -119,4 +131,31 @@ public class AppContext {
         }
     }
 
+    private void registerInterfaces(Class<?> clazz, Object instance) {
+        for (Class<?> i : clazz.getInterfaces()) {
+            if (beans.containsKey(i) && beans.get(i) != instance) {
+                throw new IllegalStateException(
+                        i.getName() + " 타입에 대해 여러 개의 Bean이 존재합니다: " +
+                                beans.get(i).getClass().getName() + ", " + clazz.getName()
+                );
+            }
+            beans.put(i, instance);
+        }
+    }
+
+    private Object findBean(Class<?> type) {
+        Object bean = beans.get(type);
+        if (bean != null) {
+            return bean;
+        }
+
+        for (Map.Entry<Class<?>, Object> entry : beans.entrySet()) {
+            if (type.isAssignableFrom(entry.getKey()) && !entry.getKey().isInterface()) {
+                return entry.getValue();
+            }
+        }
+
+        return null;
+    }
+    
 }
